@@ -26,15 +26,41 @@ class Buffer {
 public:
     Buffer(int size):
         size_(size),
-        finish_time_()
+        finish_time_(),
+        last_arrival(-1)
     {}
 
     Response Process(const Request &request) {
         // write your code here
+        int start_time = request.arrival_time;
+        bool dropped = false;
+        
+        if(!finish_time_.empty()){
+            if(request.arrival_time >= finish_time_.front()){
+                finish_time_.pop();
+            }
+        }
+        if(finish_time_.size() == size_){ //Queue is full
+            dropped = true;
+        }
+        else if(finish_time_.empty()){ //Queue is empty
+            dropped = false;
+            finish_time_.push(start_time + request.process_time);
+        }
+        
+        else{ //Queue is neither empty nor full
+            start_time = finish_time_.back();
+            dropped = false;
+            finish_time_.push(start_time + request.process_time);
+        }
+
+        last_arrival = request.arrival_time;
+        return Response(dropped,start_time);
     }
 private:
     int size_;
     std::queue <int> finish_time_;
+    int last_arrival;
 };
 
 std::vector <Request> ReadRequests() {
